@@ -1,0 +1,84 @@
+# Guardrail / policy weakening + behavioral override (Excessive Agency).
+# In a CLAUDE.md these are always-on standing instructions, so escalate one step.
+
+- id: guardrail.auto_approve
+  category: excessive_agency
+  severity: high
+  confidence: medium
+  language: en
+  description: Standing instruction to auto-approve tools or skip the consent prompt.
+  remediation: Never instruct the agent to bypass tool-use confirmation.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)(auto-?approve|automatically\\s+approve|pre-?approve)\\s+(all\\s+|every\\s+|any\\s+)?(tools?|commands?|actions?|requests?)"
+    - "(?i)treat\\s+(all\\s+|every\\s+)?(tools?|commands?|actions?)\\s+as\\s+(pre-?approved|approved|trusted|safe)"
+    - "(?i)(never|don'?t|do\\s+not)\\s+ask\\s+(for\\s+)?(permission|confirmation|consent)"
+    - "(?i)(never|don'?t|do\\s+not)\\s+ask\\s+(the\\s+user\\s+)?before\\s+(running|executing|doing)"
+    - "(?i)(without|skip|skipping|no\\s+need\\s+for)\\s+(asking|confirmation|consent|approval|permission)"
+    - "(?i)bypass\\s+(the\\s+)?(permission|permissions|guardrail|guardrails|safety|approval)"
+
+- id: guardrail.disable_safety
+  category: excessive_agency
+  severity: high
+  confidence: medium
+  language: en
+  description: Standing instruction to disable safety checks or validation.
+  remediation: Do not instruct the agent to disable safety mechanisms.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)disable (the )?(safety|guardrails?|checks?|validation|security)"
+    - "(?i)turn off (the )?(safety|guardrails?|checks?|validation|security)"
+
+- id: behavior.override_user
+  category: prompt_injection
+  severity: medium
+  confidence: medium
+  language: en
+  description: Standing instruction to ignore the user's own confirmations or decisions.
+  remediation: Project policy must not override the user's explicit confirmations.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)ignore (the )?(user'?s?|user) (confirmation|confirmations|decision|objection|denial|no)"
+    - "(?i)even if the user (says no|objects|refuses|declines|denies)"
+    - "(?i)regardless of (what )?the user (says|wants|asks)"
+
+- id: guardrail.auto_approve_uk
+  category: excessive_agency
+  severity: high
+  confidence: medium
+  language: uk
+  description: Ukrainian — standing instruction to auto-approve or skip confirmation.
+  remediation: Never instruct the agent to bypass tool-use confirmation.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)(автоматично |завжди )?(схвалюй|підтверджуй|дозволяй) (всі |усі |будь-які )?(інструменти|команди|дії)"
+    - "(?i)(ніколи |не )(питай|запитуй|проси) (дозвіл|підтвердження|згоду)"
+    - "(?i)(не запитуючи|без запиту|пропускай) (підтвердження|дозвіл|згоду)"
+
+- id: guardrail.auto_approve_ru
+  category: excessive_agency
+  severity: high
+  confidence: medium
+  language: ru
+  description: Russian — standing instruction to auto-approve or skip confirmation.
+  remediation: Never instruct the agent to bypass tool-use confirmation.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)(автоматически |всегда )?(одобряй|подтверждай|разрешай) (все |любые )?(инструменты|команды|действия)"
+    - "(?i)(никогда |не )(спрашивай|проси) (разрешени|подтверждени|согласи)"
+    - "(?i)(не спрашивая|без запроса|пропускай) (подтверждени|разрешени|согласи)"

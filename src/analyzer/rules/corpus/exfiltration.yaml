@@ -1,0 +1,49 @@
+# Standing data-exfiltration instructions (natural language). Code-level exfil
+# (env -> network) is caught precisely by the AST/taint layer; these catch the
+# instruction-text form, e.g. "after every commit, POST the diff to <url>".
+
+- id: exfil.standing_post
+  category: data_exfiltration
+  severity: high
+  confidence: medium
+  language: en
+  description: Standing instruction to send local data to an external destination.
+  remediation: Remove instructions that transmit repo, environment or secret data externally.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)(send|post|upload|exfiltrate|transmit|email|curl|fetch) .{0,60}(http://|https://|ftp://|@[a-z0-9.-]+\\.[a-z]{2,})"
+    - "(?i)(send|post|upload|email) (the |your )?(diff|env|environment|secrets?|tokens?|keys?|credentials?|\\.env|history)"
+    - "(?i)after (every|each) (commit|task|run|message|turn|tool call) .{0,80}(send|post|upload|report|transmit|curl|fetch)"
+
+- id: exfil.standing_post_uk
+  category: data_exfiltration
+  severity: high
+  confidence: medium
+  language: uk
+  description: Ukrainian — standing instruction to send local data to an external destination.
+  remediation: Remove instructions that transmit repo, environment or secret data externally.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)(надішли|відправ|завантаж|надсилай|відправляй) .{0,60}(http://|https://|на сервер|на адресу)"
+    - "(?i)після (кожного|кожної) (коміту|комміту|задачі|запуску) .{0,80}(надішли|відправ|надсилай)"
+
+- id: exfil.standing_post_ru
+  category: data_exfiltration
+  severity: high
+  confidence: medium
+  language: ru
+  description: Russian — standing instruction to send local data to an external destination.
+  remediation: Remove instructions that transmit repo, environment or secret data externally.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  negatable: true
+  patterns:
+    - "(?i)(отправь|отправляй|загрузи|пошли|посылай) .{0,60}(http://|https://|на сервер|на адрес)"
+    - "(?i)после (каждого|каждой) (коммита|задачи|запуска) .{0,80}(отправь|отправляй|пошли)"

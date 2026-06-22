@@ -1,0 +1,76 @@
+# Prompt-injection patterns — multilingual (English, Ukrainian, Russian).
+# re2 syntax only: (?i) inline flag is fine; NO lookaround / backreferences.
+# These match instructions aimed at the agent/analyzer, not documentation (see
+# surface scoping + documents-vs-performs downgrade in static_rules.py).
+
+- id: injection.ignore_previous
+  category: prompt_injection
+  severity: high
+  confidence: medium
+  language: en
+  description: Instructs the agent to ignore or disregard prior/system instructions.
+  remediation: Remove instructions that override the agent's own directives.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  patterns:
+    - "(?i)ignore\\s+(all\\s+|any\\s+)?(previous|prior|above|earlier|the)\\s+(instructions|rules|directions|prompts)"
+    - "(?i)disregard\\s+(all\\s+|any\\s+)?(previous|prior|above|your)\\s+(instructions|rules|system\\s+prompt)"
+    - "(?i)forget\\s+(everything|all)\\s+(you|that)\\s+(were\\s+told|know|above)"
+
+- id: injection.mark_safe
+  category: prompt_injection
+  severity: high
+  confidence: medium
+  language: en
+  description: Instructs a reviewer/analyzer to classify the artifact as safe or clean.
+  remediation: Remove instructions directed at any security reviewer or model judge.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  patterns:
+    - "(?i)(mark|classify|report|rate|consider)\\s+(this|the\\s+skill|it|the\\s+artifact|me)\\s+(as\\s+)?(safe|clean|benign|trusted)"
+    - "(?i)(return|output|respond\\s+with)\\s+(a\\s+)?(clean|safe|empty)\\s+(verdict|result|report|finding)"
+    - "(?i)do\\s+not\\s+(report|flag|raise|surface)\\s+(this|any|the)\\s+(finding|issue|skill|artifact|vulnerability|problem)"
+
+- id: injection.role_override
+  category: prompt_injection
+  severity: medium
+  confidence: low
+  language: en
+  description: Attempts to reassign the agent's role or persona to bypass safeguards.
+  remediation: Remove role-reassignment / jailbreak framing.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  patterns:
+    - "(?i)you are now (a|an|in) (developer|dan|jailbreak|unrestricted|god)"
+    - "(?i)from now on,? (you|ignore|act|respond)"
+
+- id: injection.ignore_previous_uk
+  category: prompt_injection
+  severity: high
+  confidence: medium
+  language: uk
+  description: Ukrainian — instructs the agent to ignore previous instructions.
+  remediation: Remove instructions that override the agent's own directives.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  patterns:
+    - "(?i)(ігноруй|іґноруй|не зважай на|знехтуй) (всі |усі |будь-які )?(попередні|минулі|наведені|системні) (інструкції|правила|вказівки)"
+    - "(?i)(познач|вважай|класифікуй|оціни) (це|цей навик|його|артефакт) (як )?(безпечн|чист|надійн)"
+
+- id: injection.ignore_previous_ru
+  category: prompt_injection
+  severity: high
+  confidence: medium
+  language: ru
+  description: Russian — instructs the agent to ignore previous instructions.
+  remediation: Remove instructions that override the agent's own directives.
+  surfaces: [body, reference]
+  kinds: [any]
+  escalate_for_claude_md: true
+  patterns:
+    - "(?i)(игнорируй|игнорируйте|не обращай внимания на|забудь) (все |любые )?(предыдущие|прошлые|приведённые|системные) (инструкции|правила|указания)"
+    - "(?i)(пометь|считай|классифицируй|оцени) (это|этот навык|его|артефакт) (как )?(безопасн|чист|надёжн)"
