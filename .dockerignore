@@ -1,0 +1,30 @@
+# VCS / CI
+.git
+.github
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+
+# Tests & docs are not needed in the runtime image
+tests/
+docs/
+
+# Frontend build artifacts & deps (the image builds the SPA itself)
+node_modules/
+web/node_modules/
+web/dist/
+
+# Secrets — never bake provider keys into the image
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store

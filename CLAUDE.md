@@ -7,9 +7,11 @@ permissions, obfuscation and supply-chain risk; returns a `ScanReport` (JSON + S
 
 ## Status
 
-- **Built (this session): engine package `src/analyzer/` — milestones M1–M6 + eval harness.**
-- **Deferred: M7 (FastAPI + React/Vite/Tailwind/shadcn SPA via Bun, openapi→types pipeline) and
-  M8 (multi-stage Dockerfile + Dokku deploy).**
+- **Engine `src/analyzer/` — M1–M6 + eval harness.** Pure library, no web imports.
+- **M7 web app — DONE.** FastAPI wrapper (`api/`), React + Vite + TS + Tailwind SPA (`web/`, Bun),
+  typed `openapi.json → types.ts` contract.
+- **M8 deploy — DONE.** Multi-stage `Dockerfile` (Bun builds SPA → FastAPI serves it static), Dokku
+  deploy docs + egress allowlist in `README.md`, `.env.example`.
 
 ## Stack
 
@@ -55,12 +57,34 @@ AST/dataflow → obfuscation → supply-chain/OSV → judge panel → score/verd
 - **OSV is injected** into `analyze(..., osv_query=...)` so tests stay offline; offline degrades
   to an Info note.
 
+## Web layer (`api/` + `web/`)
+
+- **One-directional dependency**: `api/` imports `analyzer`; `analyzer` never imports `api/`.
+  `api/` is a top-level package (NOT in the `analyzer` wheel) — run via `uvicorn api.main:app`;
+  Docker sets `PYTHONPATH=/app` so it's importable.
+- **`POST /scan`** (`api/main.py`): one multipart endpoint, three modes (`text`/`zip`/`git`).
+  Size caps enforced before ingest (413); `IngestError` → 400 (safe message, never a stack trace);
+  blocking ingest+`analyze` run via `anyio.to_thread.run_sync`; `Bundle` always cleaned in
+  `finally` (submissions ephemeral); content/secrets never logged. SARIF via `?format=sarif` or
+  `Accept: application/sarif+json`. `ingest_git` is called with `allow_local=False`.
+- **Scan config is dependency-injected** (`api/deps.py` `get_scan_context`): prod uses
+  `DEFAULT_CONFIG` + real OSV; tests override the dependency to disable OSV and stub its query
+  (offline). `JUDGE_LIVE=1` flips live judges on with no code change (`DEFAULT_CONFIG` reads it).
+- **Typed contract**: `api/dump_openapi.py` writes `web/openapi.json` (committed); `bun run gen:api`
+  → `web/src/lib/api/types.ts` (committed); `openapi-fetch` client in `web/src/lib/api/client.ts`.
+  Drift guarded by `tests/test_openapi_contract.py` + `scripts/check-openapi-drift.sh`.
+- **§6.5 report safety**: the SPA renders ALL untrusted strings (evidence, filenames, import
+  targets, artifact name) as inert escaped JSX text — no `dangerouslySetInnerHTML`, no markdown
+  execution, no auto-linking. Locked by `web/src/components/ReportView.test.tsx`.
+
 ## Commands
 
 ```bash
-uv run pytest                      # full suite (128 tests)
-uvx pyright src tests              # type check (use this, NOT the editor LSP — see gotcha)
+uv run pytest                      # full suite (engine + API + contract)
+uvx pyright src tests api          # type check (use this, NOT the editor LSP — see gotcha)
+cd web && bun run test             # frontend (Vitest): inert-evidence + smoke
 uv run python -m tests.eval.harness  # precision/recall over the §10 corpus + self-scan
+docker build -t skill-analyzer .   # multi-stage image (SPA + API)
 ```
 
 ## Gotchas
