@@ -1,0 +1,43 @@
+[project]
+name = "skill-analyzer"
+version = "0.1.0"
+description = "Static security analyzer for AI agent instruction artifacts (SKILL.md, AGENTS.md, CLAUDE.md)"
+authors = [
+    { name = "Mykola Solodukha", email = "mykola@mykolasolodukha.me" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "bashlex>=0.18",
+    "google-re2>=1.1.20251105",
+    "httpx>=0.28.1",
+    "litellm>=1.89.3",
+    "pydantic>=2.13.4",
+    "pyyaml>=6.0.3",
+    "yara-python>=4.5.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.20,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "analyzer"
+module-root = "src"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+include = ["src", "tests"]
+
+[tool.pytest.ini_options]
+addopts = "--timeout=30"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-timeout>=2.4.0",
+]
