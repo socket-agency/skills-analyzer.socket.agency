@@ -49,5 +49,9 @@ class LiteLLMJudge:
             messages=messages,
             response_format={"type": "json_object"},
             temperature=0,
+            # Bound each call so a slow provider abstains (raises Timeout -> caught) rather
+            # than hanging the panel; no internal retries multiplying that latency.
+            timeout=self.config.judge_timeout_seconds,
+            num_retries=0,
         )
         return resp.choices[0].message.content or ""

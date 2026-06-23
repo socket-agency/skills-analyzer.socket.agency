@@ -65,6 +65,9 @@ class AnalyzerConfig:
     panel_size: int = 3
     judge_min_confidence_votes: int = 1  # >=1 judge at confidence >= Medium to keep a finding
     judge_live: bool = field(default_factory=lambda: os.environ.get("JUDGE_LIVE") == "1")
+    # Per-judge LLM call timeout. Bounds a slow/hanging model so it abstains instead of
+    # stalling the whole panel (calls run in parallel, so this also caps the panel's wall time).
+    judge_timeout_seconds: float = 30.0
 
     # --- supply chain ---
     osv_enabled: bool = True

@@ -124,3 +124,61 @@ def test_select_panel_is_stratified():
         providers = [m.provider for m in panel]
         assert len(set(providers)) == len(providers)  # distinct providers, never 3-of-one-lab
         assert any(m.open_source for m in panel)  # at least one open-source model
+
+
+# (h) live-judge robustness: a slow model must abstain, not hang the panel -------------------
+
+
+def test_live_judge_forwards_call_timeout_and_disables_retries():
+    """The per-judge call must pass a bounded timeout (and no retries) to LiteLLM, so a
+    slow provider raises and abstains instead of stalling the whole panel."""
+    from analyzer.judges.client import LiteLLMJudge
+
+    captured: dict[str, object] = {}
+
+    class _Msg:
+        content = '{"findings": []}'
+
+    class _Choice:
+        message = _Msg()
+
+    class _Resp:
+        choices = [_Choice()]
+
+    class _FakeLiteLLM:
+        def completion(self, **kwargs):
+            captured.update(kwargs)
+            return _Resp()
+
+    judge = LiteLLMJudge(JudgeModel("openrouter/x/y", "openrouter"), DEFAULT_CONFIG)
+    raw = judge._complete(_FakeLiteLLM(), [{"role": "user", "content": "hi"}])
+
+    assert raw == '{"findings": []}'
+    assert captured["model"] == "openrouter/x/y"
+    assert captured["timeout"] == DEFAULT_CONFIG.judge_timeout_seconds
+    assert captured["num_retries"] == 0
+
+
+def test_live_judge_abstains_when_provider_errors():
+    """Any provider/timeout error => the judge returns no output (abstains), never a clean vote."""
+    from analyzer.judges.client import LiteLLMJudge
+    from analyzer.judges.types import JudgeRequest
+
+    class _BoomLiteLLM:
+        def completion(self, **kwargs):
+            raise TimeoutError("provider too slow")
+
+    judge = LiteLLMJudge(JudgeModel("openrouter/x/y", "openrouter"), DEFAULT_CONFIG)
+    # exercise the real evaluate() path with litellm monkeypatched in via the import cache
+    import sys
+
+    saved = sys.modules.get("litellm")
+    sys.modules["litellm"] = _BoomLiteLLM()  # type: ignore[assignment]
+    try:
+        result = judge.evaluate(JudgeRequest(system="s", data_block="d", nonce="n"))
+    finally:
+        if saved is not None:
+            sys.modules["litellm"] = saved
+        else:
+            sys.modules.pop("litellm", None)
+    assert result.output is None  # abstained
