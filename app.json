@@ -1,0 +1,21 @@
+{
+  "healthchecks": {
+    "web": [
+      {
+        "type": "startup",
+        "name": "web is up",
+        "path": "/api/health",
+        "attempts": 10,
+        "wait": 5,
+        "timeout": 5
+      },
+      {
+        "type": "liveness",
+        "name": "web stays up",
+        "path": "/api/health",
+        "interval": 30,
+        "timeout": 5
+      }
+    ]
+  }
+}

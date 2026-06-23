@@ -12,6 +12,7 @@ build/
 .env
 .env.*
 !.env.example
+.dokku.env
 
 # Node / frontend
 node_modules/

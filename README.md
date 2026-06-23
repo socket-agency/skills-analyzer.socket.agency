@@ -111,26 +111,46 @@ architecture, invariants, conventions and gotchas. Claude Code reads `CLAUDE.md`
 
 ## Deployment (Dokku, single app)
 
-The multi-stage `Dockerfile` builds the SPA with Bun, then serves it from the FastAPI `uv` runtime
-— one container, one domain, no CORS.
+Deployed as one Dokku app straight from this monorepo's `Dockerfile` (Bun builds the SPA, the `uv`
+runtime serves it + the API — one container, one domain, no CORS). A `Procfile` defines the `web`
+process binding to `$PORT`, and `app.json` wires Dokku's zero-downtime healthchecks to
+`/api/health`.
+
+Run it locally first:
 
 ```bash
 docker build -t skill-analyzer .
 docker run --rm -p 8000:8000 --env-file .env skill-analyzer
 ```
 
-On Dokku:
+First-time setup on the Dokku host (`oasis.wg`):
 
 ```bash
-dokku apps:create skill-analyzer
-dokku builder-dockerfile:set skill-analyzer dockerfile-path Dockerfile
-# secrets (server-side only — never exposed to the client):
-dokku config:set skill-analyzer JUDGE_LIVE=1 OPENROUTER_API_KEY=…
+dokku apps:create skills-analyzer-socket-agency
+
+# secrets — server-side only, never exposed to the client (see .env.example):
+dokku config:set skills-analyzer-socket-agency JUDGE_LIVE=1 OPENROUTER_API_KEY=sk-or-...
+
+# uploads accept up to ~25 MB, but Dokku's nginx default caps bodies at 1 MB (-> 413);
+# raise it, and allow slow live-judge scans to finish, then rebuild the proxy config:
+dokku nginx:set skills-analyzer-socket-agency client-max-body-size 30m
+dokku nginx:set skills-analyzer-socket-agency proxy-read-timeout 120s
+dokku proxy:build-config skills-analyzer-socket-agency
+
+# domain + TLS:
+dokku domains:set skills-analyzer-socket-agency skills-analyzer.socket.agency
+dokku letsencrypt:enable skills-analyzer-socket-agency
+```
+
+Deploy (the `dokku` remote is `dokku@oasis.wg:skills-analyzer-socket-agency`):
+
+```bash
 git push dokku main
 ```
 
 See `.env.example` for all variables (judge toggle + provider keys, `PORT`). The engine's
 `AnalyzerConfig` limits (size/file caps, judge panel size, OSV) live in `src/analyzer/config.py`.
+A `.dokku.env` (gitignored) is the convention for keeping a local copy of the app's config.
 
 **Egress allowlist (enforce at the platform/firewall layer):** the app only needs outbound access
 to the **LLM gateway** (OpenRouter, when judges are live) and **`api.osv.dev`** (supply-chain
