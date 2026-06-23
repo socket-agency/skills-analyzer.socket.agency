@@ -105,6 +105,10 @@ cd web && bun run test                 # frontend (Vitest): inert-evidence + smo
 uv run python -m tests.eval.harness    # precision/recall over the corpus + self-scan
 ```
 
+Contributing (or working with a coding agent)? See **[`AGENTS.md`](AGENTS.md)** for the
+architecture, invariants, conventions and gotchas. Claude Code reads `CLAUDE.md` (which imports
+`AGENTS.md`).
+
 ## Deployment (Dokku, single app)
 
 The multi-stage `Dockerfile` builds the SPA with Bun, then serves it from the FastAPI `uv` runtime
