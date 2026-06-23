@@ -55,7 +55,7 @@ class LiteLLMJudge:
                     # Log a short STRUCTURAL prefix (fence/brace), not the body — enough to
                     # see *why* it won't parse without dumping artifact-derived content.
                     logger.warning(
-                        "judge %s abstained: unparseable JSON after repair retry (starts %r)",
+                        "judge %s abstained: no usable findings after repair retry (starts %r)",
                         model,
                         raw.lstrip()[:32],
                     )

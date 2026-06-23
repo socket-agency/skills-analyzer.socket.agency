@@ -95,6 +95,47 @@ def test_parse_judge_output_tolerates_fenced_and_prose_json():
     assert parsed is not None and len(parsed.findings) == 1
 
 
+def test_parse_judge_output_coerces_loose_enums_and_extra_keys():
+    """Real replies paraphrase enums, add keys, and omit text — coerce instead of discarding."""
+    reply = (
+        '{"summary": "ignored extra key", "findings": [{'
+        '"category": "Remote Code Execution", "severity": "Critical", "confidence": "Certain", '
+        '"evidence": "!`socat ...`"}]}'  # title-case enums, alias category, no risk/remediation
+    )
+    parsed = parse_judge_output(reply)
+    assert parsed is not None
+    assert len(parsed.findings) == 1
+    f = parsed.findings[0]
+    assert f.category is Category.COMMAND_EXECUTION
+    assert f.severity is Severity.CRITICAL
+    assert f.confidence is Confidence.HIGH
+    assert f.risk and f.remediation  # defaulted, not empty
+
+
+def test_parse_judge_output_drops_unusable_but_keeps_good_findings():
+    """One garbage finding shouldn't sink a sibling valid one."""
+    reply = (
+        '{"findings": ['
+        '{"category": "not_a_real_category", "severity": "high", "confidence": "high", "evidence": "e"},'
+        '{"category": "command_execution", "severity": "high", "confidence": "high", "evidence": "real"}'
+        "]}"
+    )
+    parsed = parse_judge_output(reply)
+    assert parsed is not None
+    assert len(parsed.findings) == 1
+    assert parsed.findings[0].evidence == "real"
+
+
+def test_system_prompt_enumerates_allowed_enum_values():
+    """Judges must be told the exact tokens, or they invent their own and get rejected."""
+    from analyzer.judges.panel import build_system_prompt
+
+    prompt = build_system_prompt("nonce")
+    assert "command_execution" in prompt
+    assert "prompt_injection" in prompt
+    assert "critical" in prompt and "info" in prompt
+
+
 def test_abstaining_judge_does_not_clear_others():
     """(e)+(f): a jailbroken/broken judge can't suppress another judge's finding."""
     flagged = FakeJudge(JudgeModel("good", "p1"), JudgeOutput(findings=[_finding()]))
