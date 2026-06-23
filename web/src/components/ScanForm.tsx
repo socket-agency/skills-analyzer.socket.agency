@@ -24,6 +24,15 @@ const KIND_OPTIONS = [
   { value: "claude_md", label: "CLAUDE.md (memory)" },
 ] as const;
 
+/** A multi-file bundle goes through zip ingest; anything else is a single text artifact. */
+function isZipFile(file: File): boolean {
+  return (
+    file.name.toLowerCase().endsWith(".zip") ||
+    file.type === "application/zip" ||
+    file.type === "application/x-zip-compressed"
+  );
+}
+
 export interface ScanFormProps {
   busy: boolean;
   onSubmit: (form: FormData) => void;
@@ -45,17 +54,27 @@ export function ScanForm({ busy, onSubmit }: ScanFormProps) {
     setFilename(ex.filename);
   }
 
-  function submit() {
+  async function submit() {
     const form = new FormData();
-    form.set("mode", mode);
     if (mode === "text") {
+      form.set("mode", "text");
       form.set("content", content);
       form.set("kind_hint", kindHint);
       if (filename.trim()) form.set("filename", filename.trim());
     } else if (mode === "zip") {
       if (!file) return;
-      form.set("file", file, file.name);
+      if (isZipFile(file)) {
+        form.set("mode", "zip");
+        form.set("file", file, file.name);
+      } else {
+        // A single markdown/text artifact isn't a bundle — submit its contents as a
+        // text scan so the engine detects the kind from the filename (SKILL.md, etc.).
+        form.set("mode", "text");
+        form.set("content", await file.text());
+        form.set("filename", file.name);
+      }
     } else {
+      form.set("mode", "git");
       form.set("url", url.trim());
     }
     onSubmit(form);
@@ -140,20 +159,22 @@ export function ScanForm({ busy, onSubmit }: ScanFormProps) {
         </TabsContent>
 
         <TabsContent value="zip" className="mt-4 space-y-3">
-          <Label htmlFor="zipfile">Skill bundle (.zip)</Label>
+          <Label htmlFor="artifactfile">Artifact file (.md) or skill bundle (.zip)</Label>
           <Input
-            id="zipfile"
+            id="artifactfile"
             type="file"
-            accept=".zip,application/zip"
+            accept=".md,.markdown,.txt,.zip,application/zip"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
           {file ? (
             <p className="font-mono text-xs text-muted">
-              {file.name} · {(file.size / 1024).toFixed(1)} KB
+              {file.name} · {(file.size / 1024).toFixed(1)} KB ·{" "}
+              {isZipFile(file) ? "zip bundle" : "single artifact"}
             </p>
           ) : (
             <p className="font-mono text-xs text-faint">
-              A zipped skill/agent directory (manifest + scripts + references).
+              A single SKILL.md / AGENTS.md / CLAUDE.md, or a zipped skill/agent directory
+              (manifest + scripts + references).
             </p>
           )}
         </TabsContent>
