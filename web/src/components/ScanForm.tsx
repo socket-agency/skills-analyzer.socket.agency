@@ -4,6 +4,13 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { EXAMPLES, type ScanExample } from "@/lib/examples";
@@ -107,18 +114,18 @@ export function ScanForm({ busy, onSubmit }: ScanFormProps) {
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="kind">Artifact kind</Label>
-              <select
-                id="kind"
-                value={kindHint}
-                onChange={(e) => setKindHint(e.target.value)}
-                className="h-10 rounded-md border border-line bg-canvas/70 px-3 font-mono text-[13px] text-ink focus-visible:border-scan/50 focus-visible:outline-none"
-              >
-                {KIND_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value} className="bg-panel">
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={kindHint} onValueChange={setKindHint}>
+                <SelectTrigger id="kind" className="w-56" aria-label="Artifact kind">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {KIND_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="filename">Filename (optional)</Label>
