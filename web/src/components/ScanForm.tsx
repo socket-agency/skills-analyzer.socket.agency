@@ -104,8 +104,8 @@ export function ScanForm({ busy, onSubmit }: ScanFormProps) {
             onChange={(e) => setContent(e.target.value)}
             spellCheck={false}
           />
-          <div className="flex flex-wrap gap-4">
-            <div className="space-y-1.5">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="kind">Artifact kind</Label>
               <select
                 id="kind"
@@ -120,7 +120,7 @@ export function ScanForm({ busy, onSubmit }: ScanFormProps) {
                 ))}
               </select>
             </div>
-            <div className="flex-1 space-y-1.5">
+            <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="filename">Filename (optional)</Label>
               <Input
                 id="filename"
