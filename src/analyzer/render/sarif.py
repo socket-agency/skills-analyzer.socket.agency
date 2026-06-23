@@ -74,7 +74,7 @@ def to_sarif(report: ScanReport) -> dict:
                 "tool": {
                     "driver": {
                         "name": "skill-analyzer",
-                        "informationUri": "https://github.com/socket-agency/skill-analyzer",
+                        "informationUri": "https://github.com/socket-agency/skills-analyzer.socket.agency",
                         "version": __version__,
                         "rules": _rules(findings),
                     }
